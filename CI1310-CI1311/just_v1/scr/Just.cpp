@@ -25,13 +25,13 @@ void Just::justify(int argc, char* argv[])
         }
 
         //I need to create a subprocess (son) for each inputfile and tell each son to indent it's inputfile.
-        int mtype = 1;
+        int sonID = 1;
         for(list<string>::iterator ind = argS.inputFileNames.begin(); ind != argS.inputFileNames.end(); ++ind){
             if(!fork()){
-                indent(*ind, getOutputFileName(*ind), mtype);
+                indent(*ind, getOutputFileName(*ind), sonID);
                 _exit(0);
             }
-            ++mtype;
+            ++sonID;
         }
     }
     else{
