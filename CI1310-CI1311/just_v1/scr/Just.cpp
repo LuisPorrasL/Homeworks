@@ -33,6 +33,8 @@ void Just::justify(int argc, char* argv[])
             }
             ++sonID;
         }
+        int sonN = sonID;
+        cout << sonN << '\n';
     }
     else{
         printError();
@@ -85,6 +87,9 @@ void Just::indent(const string& iFName, const string& oFName, int sonID)
         }
         sendReservedWordData(sonID);
         file.write(justList, oFName);
+    }
+    else{
+        sendReservedWordData(sonID);
     }
 }
 
@@ -314,7 +319,5 @@ void Just::printError()
 }
 
 void Just::sendReservedWordData(int mtype){
-    for(map<string, int>::iterator it = rWStructure.begin(); it != rWStructure.end(); ++it){
-        cout << mtype  << ": " << it->first << " =>" << it->second << '\n';
-    }
+
 }
