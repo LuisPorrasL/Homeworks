@@ -16,6 +16,7 @@
 #define FOR "for"
 #define CODE_DELIMETERS " (){}:<>*&|^/[];!?"
 #define M_KEY 0xD65477
+#define RMA_M 100
 
 #include <iostream>
 #include <list>
@@ -23,7 +24,6 @@
 #include <string>
 #include <queue>
 #include <map>
-#include <wait.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
@@ -55,7 +55,9 @@ private:
 
     struct shmStruct{
         int rMNumber;
-        recivedMessage rMArray[84];
+        recivedMessage rMArray[RMA_M];
+
+        inline shmStruct():rMNumber(0), rMArray{}{}
     };
 
     //Fields

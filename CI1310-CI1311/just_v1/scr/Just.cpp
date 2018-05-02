@@ -39,20 +39,21 @@ void Just::justify(int argc, char* argv[])
         //I need to recive the messages from my sons and store them in shared memory.
         int sonN = --sonID;
         Sem s;
-        int shmID = shmget(M_KEY, 1024, IPC_CREAT | 0600);
+
+        int shmID = shmget(M_KEY, sizeof(shmStruct), IPC_CREAT | 0600);
         if(-1 == shmID){
             perror("Just::justify: shmget error");
             exit(-1);
         }
         shmStruct* shmArea = (shmStruct*)shmat(shmID, NULL, 0);
 
-
-        //I need to create a son to read from shmArea and print on the stdout
+        /*//I need to create a son to read from shmArea and print on the stdout
         if(!fork()){
             s.wait();
             for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
                 cout << shmArea->rMArray[shmInd].word << " " << shmArea->rMArray[shmInd].counter << '\n';
             }
+            s.signal();
             _exit(0);
         }
 
@@ -64,9 +65,11 @@ void Just::justify(int argc, char* argv[])
         }
         shmArea->rMNumber = --sonID;
         s.signal();
+        s.wait();*/
 
         shmdt(shmArea);
         shmctl(shmID, IPC_RMID, NULL);
+        cout << "Padre: ¡Me muero!" << '\n';
     }
     else{
         printError();
@@ -351,5 +354,5 @@ void Just::printError()
 }
 
 void Just::sendReservedWordData(Message& m, int mtype){
-    m.send(mtype, "Hello wold!", mtype);
+    /*m.send(mtype, "Hello wold!", mtype);*/
 }
