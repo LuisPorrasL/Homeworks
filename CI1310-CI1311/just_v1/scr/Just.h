@@ -15,6 +15,7 @@
 #define SEMICOLON ";"
 #define FOR "for"
 #define CODE_DELIMETERS " (){}:<>*&|^/[];!?"
+#define M_KEY 0xD65477
 
 #include <iostream>
 #include <list>
@@ -22,6 +23,9 @@
 #include <string>
 #include <queue>
 #include <map>
+#include <wait.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #include "File.h"
 #include "Sem.h"
@@ -40,6 +44,18 @@ private:
         list<string> inputFileNames;
 
         inline argStruct():errorCode(0), e(DEFAULT_E), isHelpAsked(false), inputFileNames(){}
+    };
+
+    struct recivedMessage{
+        int counter;
+        char word[M];
+
+        inline recivedMessage():counter(0), word{0}{}
+    };
+
+    struct shmStruct{
+        int rMNumber;
+        recivedMessage rMArray[84];
     };
 
     //Fields
@@ -73,7 +89,7 @@ public:
     static queue<string> tokenize(const string &str, const char* delimeters);
 private:
     string getOutputFileName(const string& iFName);
-    void indent(const string& iFName, const string &oFName, int sonID);
+    void indent(const string& iFName, const string &oFName, Message &m ,int sonID);
     list<string> splitInstructions(string &line);
     //Indent an instruction.
     void indentInstruction(list<string> *justList, string instruction);
@@ -95,7 +111,7 @@ private:
     void initializeArguments(int argc, char *argv[]);
     void printHelp();
     void printError();
-    void sendReservedWordData(int mtype);
+    void sendReservedWordData(Message &m, int mtype);
 };
 
 #endif // JUST_H

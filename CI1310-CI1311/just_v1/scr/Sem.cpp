@@ -22,7 +22,7 @@ Sem::~Sem(){
     }
     cout << "Sem: ¡Me muero!" << '\n';
 }
-int Sem::Signal(){
+int Sem::signal(){
     sembuf s;
     s.sem_num = 0;
     s.sem_op = 1;
@@ -30,7 +30,7 @@ int Sem::Signal(){
 
     return semop(id, &s, 1);
 }
-int Sem::Wait(){
+int Sem::wait(){
     sembuf s;
     s.sem_num = 0;
     s.sem_op = -1;

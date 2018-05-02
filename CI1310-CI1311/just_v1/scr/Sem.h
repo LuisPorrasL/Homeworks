@@ -25,8 +25,8 @@ private:
 public:
     Sem(int initVal = 0);
     ~Sem();
-    int Signal();
-    int Wait();
+    int signal();
+    int wait();
 private:
     int id;
 };

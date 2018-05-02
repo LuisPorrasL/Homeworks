@@ -25,16 +25,48 @@ void Just::justify(int argc, char* argv[])
         }
 
         //I need to create a subprocess (son) for each inputfile and tell each son to indent it's inputfile.
+        //I need to create a "Buzon" to comunicate with my sons.
+        Message m;
         int sonID = 1;
         for(list<string>::iterator ind = argS.inputFileNames.begin(); ind != argS.inputFileNames.end(); ++ind){
             if(!fork()){
-                indent(*ind, getOutputFileName(*ind), sonID);
+                indent(*ind, getOutputFileName(*ind), m, sonID);
                 _exit(0);
             }
             ++sonID;
         }
-        int sonN = sonID;
-        cout << sonN << '\n';
+        //I need to store the number of sons I have created.
+        //I need to recive the messages from my sons and store them in shared memory.
+        int sonN = --sonID;
+        Sem s;
+        int shmID = shmget(M_KEY, 1024, IPC_CREAT | 0600);
+        if(-1 == shmID){
+            perror("Just::justify: shmget error");
+            exit(-1);
+        }
+        shmStruct* shmArea = (shmStruct*)shmat(shmID, NULL, 0);
+
+
+        //I need to create a son to read from shmArea and print on the stdout
+        if(!fork()){
+            s.wait();
+            for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
+                cout << shmArea->rMArray[shmInd].word << " " << shmArea->rMArray[shmInd].counter << '\n';
+            }
+            _exit(0);
+        }
+
+        recivedMessage rM;
+
+        for(sonID = 1; sonID <= sonN; ++sonID){
+            m.receive(rM.word, M, &rM.counter, sonID);
+            shmArea->rMArray[sonID-1] = rM;
+        }
+        shmArea->rMNumber = --sonID;
+        s.signal();
+
+        shmdt(shmArea);
+        shmctl(shmID, IPC_RMID, NULL);
     }
     else{
         printError();
@@ -70,7 +102,7 @@ queue<string> Just::tokenize(const string &str, const char* delimeters)
     return strTokens;
 }
 
-void Just::indent(const string& iFName, const string& oFName, int sonID)
+void Just::indent(const string& iFName, const string& oFName, Message& m, int sonID)
 {
     list<string> fileList = file.read(iFName);
     if(!fileList.empty()){
@@ -85,11 +117,11 @@ void Just::indent(const string& iFName, const string& oFName, int sonID)
                 indentInstruction(&justList, *indI);
             }
         }
-        sendReservedWordData(sonID);
+        sendReservedWordData(m, sonID);
         file.write(justList, oFName);
     }
     else{
-        sendReservedWordData(sonID);
+        sendReservedWordData(m, sonID);
     }
 }
 
@@ -318,6 +350,6 @@ void Just::printError()
     cerr << error << '\n';
 }
 
-void Just::sendReservedWordData(int mtype){
-
+void Just::sendReservedWordData(Message& m, int mtype){
+    m.send(mtype, "Hello wold!", mtype);
 }

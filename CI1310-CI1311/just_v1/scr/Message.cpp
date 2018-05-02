@@ -2,7 +2,7 @@
 
 Message::Message()
 {
-    id = msgget(M_KEY, IPC_CREAT | 0600);
+    id = msgget(KEY, IPC_CREAT | 0600);
     if(-1 == id){
         perror("Message::Message");
         _exit(-1);
@@ -18,11 +18,12 @@ Message::~Message()
     cout << "Message: ¡Me muero!" << '\n';
 }
 
-int Message::send(const char* m)
+int Message::send(long msgtype, const char* m, int c)
 {
     msgbuf a;
-    a.mtype = 1;
+    a.mtype = msgtype;
     strcpy(a.mtext, m);
+    a.counter = c;
     int x = msgsnd(id, (void*)&a, sizeof(a), IPC_NOWAIT);
     if(-1 == x){
         perror("Message::send");
@@ -31,15 +32,16 @@ int Message::send(const char* m)
     return x;
 }
 
-int Message::receive(char* m, int len)
+int Message::receive(char* m, int len, int* c, long msgtype)
 {
     msgbuf a;
-    int x = msgrcv(id, (void*)&a, sizeof(a), 1, 0);
+    int x = msgrcv(id, (void*)&a, sizeof(a), msgtype, 0);
     if(-1 == x){
         perror("Message::receive");
         _exit(-1);
     }
     else{
+        *c = a.counter;
         strncpy(m, a.mtext, len);
     }
     return x;

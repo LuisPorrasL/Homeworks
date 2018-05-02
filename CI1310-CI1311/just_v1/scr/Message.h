@@ -1,7 +1,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
-#define M_KEY 0xC65477 // Valor de la llave del recurso
-#define M 1024
+#define KEY 0xC65477 // Valor de la llave del recurso
+#define M 32
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,14 +18,15 @@ class Message
 {
 private:
     struct msgbuf {
-        long mtype;       /* message type, must be > 0 */
-        char mtext[M];    /* message data */
+        long mtype;       //message type, must be > 0
+        int counter;
+        char mtext[M];    //message data
     };
 public:
     Message();
     ~Message();
-    int send(const char* m);
-    int receive(char *m, int len);// len es el tamaño máximo que soporte la variable mensaje
+    int send(long msgtype, const char* m, int c);
+    int receive(char *m, int len, int *c, long msgtype);// len es el tamaño máximo que soporte la variable mensaje
 private:
     int id;// Identificador del buzon
 };
