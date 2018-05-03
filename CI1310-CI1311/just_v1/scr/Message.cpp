@@ -2,7 +2,7 @@
 
 Message::Message()
 {
-    id = msgget(KEY, IPC_CREAT | 0600);
+    id = msgget(M_KEY, IPC_CREAT | 0600);
     if(-1 == id){
         perror("Message::Message");
         _exit(-1);

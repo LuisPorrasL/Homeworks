@@ -40,7 +40,7 @@ void Just::justify(int argc, char* argv[])
         int sonN = --sonID;
         Sem s;
 
-        int shmID = shmget(M_KEY, sizeof(shmStruct), IPC_CREAT | 0600);
+        int shmID = shmget(SHM_KEY, sizeof(shmStruct), IPC_CREAT | 0600);
         if(-1 == shmID){
             perror("Just::justify: shmget error");
             exit(-1);
@@ -66,6 +66,31 @@ void Just::justify(int argc, char* argv[])
         shmArea->rMNumber = --sonID;
         s.signal();
         s.wait();*/
+
+        if(!fork()){
+            s.wait();
+            for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
+                cout << shmArea->rMArray[shmInd].word << " " << shmArea->rMArray[shmInd].counter << '\n';
+            }
+            s.signal();
+            _exit(0);
+        }
+
+        int rWN = rWStructure.size();
+        for(int rWInd = 0; rWInd < rWN; ++rWInd){
+            recivedMessage rM, shmM;
+            for(sonID = 1; sonID <= sonN; ++sonID){
+                m.receive(rM.word, M, &rM.counter, sonID);
+                if(sonID == 1){
+                    strncpy(shmM.word, rM.word, M);
+                }
+                shmM.counter += rM.counter;
+            }
+            shmArea->rMArray[rWInd] = shmM;
+        }
+        shmArea->rMNumber = rWN;
+        s.signal();
+        s.wait();
 
         shmdt(shmArea);
         shmctl(shmID, IPC_RMID, NULL);
@@ -355,4 +380,7 @@ void Just::printError()
 
 void Just::sendReservedWordData(Message& m, int mtype){
     /*m.send(mtype, "Hello wold!", mtype);*/
+    for(map<string, int>::iterator it = rWStructure.begin(); it != rWStructure.end(); ++it){
+        m.send(mtype, it->first.c_str(), it->second);
+    }
 }

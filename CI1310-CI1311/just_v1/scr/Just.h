@@ -15,7 +15,7 @@
 #define SEMICOLON ";"
 #define FOR "for"
 #define CODE_DELIMETERS " (){}:<>*&|^/[];!?"
-#define M_KEY 0xD65477
+#define SHM_KEY 0xD65477
 #define RMA_M 100
 
 #include <iostream>

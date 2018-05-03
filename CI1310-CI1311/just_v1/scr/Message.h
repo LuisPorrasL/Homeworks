@@ -1,6 +1,6 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
-#define KEY 0xC65477 // Valor de la llave del recurso
+#define M_KEY 0xC65477 // Valor de la llave del recurso
 #define M 32
 
 #include <stdlib.h>
