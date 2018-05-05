@@ -23,7 +23,7 @@ private:
                                                (Linux-specific) */
     };
 public:
-    Sem(int initVal = 0);
+    Sem(int initVal, key_t key);
     ~Sem();
     int signal();
     int wait();

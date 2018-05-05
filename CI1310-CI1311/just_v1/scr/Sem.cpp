@@ -1,7 +1,7 @@
 #include "Sem.h"
 
-Sem::Sem(int initVal){
-    id = semget(S_KEY, 1,IPC_CREAT | 0600);
+Sem::Sem(int initVal, key_t key){
+    id = semget(key, 1,IPC_CREAT | 0600);
     if(-1 == id){
         perror("Sem::Sem");
         _exit(-1);

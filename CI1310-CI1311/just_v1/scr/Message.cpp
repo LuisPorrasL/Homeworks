@@ -1,8 +1,8 @@
 #include "Message.h"
 
-Message::Message()
+Message::Message(key_t key)
 {
-    id = msgget(M_KEY, IPC_CREAT | 0600);
+    id = msgget(key, IPC_CREAT | 0600);
     if(-1 == id){
         perror("Message::Message");
         _exit(-1);

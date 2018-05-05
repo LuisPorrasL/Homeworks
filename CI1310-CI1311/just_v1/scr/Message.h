@@ -23,7 +23,7 @@ private:
         char mtext[M];    //message data
     };
 public:
-    Message();
+    Message(key_t key);
     ~Message();
     int send(long msgtype, const char* m, int c);
     int receive(char *m, int len, int *c, long msgtype);// len es el tamaño máximo que soporte la variable mensaje

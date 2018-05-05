@@ -26,7 +26,7 @@ void Just::justify(int argc, char* argv[])
 
         //I need to create a subprocess (son) for each inputfile and tell each son to indent it's inputfile.
         //I need to create a "Buzon" to comunicate with my sons.
-        Message m;
+        Message m(M_KEY);
         int sonID = 1;
         int sonN = argS.inputFileNames.size();
         for(list<string>::iterator ind = argS.inputFileNames.begin(); ind != argS.inputFileNames.end(); ++ind){
@@ -39,7 +39,8 @@ void Just::justify(int argc, char* argv[])
 
         //I need to store the number of sons I have created.
         //I need to recive the messages from my sons and store them in shared memory.
-        Sem s;
+        Sem sPadre(0, S_KEY);
+        Sem sHijo(0, S_KEY+1);
 
         int shmID = shmget(SHM_KEY, sizeof(shmStruct), IPC_CREAT | 0600);
         if(-1 == shmID){
@@ -52,14 +53,14 @@ void Just::justify(int argc, char* argv[])
         int rWFirstLetterCounter = countReservedWordsFistLetters();
         if(!fork()){
             for(int ind = 0; ind < rWFirstLetterCounter; ++ind){
-                s.wait();
+                sHijo.wait();
                 cout << '\n';
                 for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
                     char rWData[M] = {0};
                     sprintf(rWData, "%-16s :%4d", shmArea->rMArray[shmInd].word, shmArea->rMArray[shmInd].counter);
                     cout << rWData << '\n';
                 }
-                s.signal();
+                sPadre.signal();
             }
             _exit(0);
         }
@@ -81,8 +82,8 @@ void Just::justify(int argc, char* argv[])
             }
             else{
                 shmArea->rMNumber = rMCounter;
-                s.signal();
-                s.wait();
+                sHijo.signal();
+                sPadre.wait();
                 rMCounter = 0;
                 shmArea->rMArray[rMCounter] = shmM;
                 while(rWFirstLetter != shmM.word[0]){
@@ -92,8 +93,8 @@ void Just::justify(int argc, char* argv[])
             rMCounter++;
         }
         shmArea->rMNumber = rMCounter;
-        s.signal();
-        s.wait();
+        sHijo.signal();
+        sPadre.wait();
 
         shmdt(shmArea);
         shmctl(shmID, IPC_RMID, NULL);
