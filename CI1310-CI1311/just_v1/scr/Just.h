@@ -3,18 +3,6 @@
 #define DEFAULT_E 4
 #define NULL_C '*'
 #define SPACE ' '
-#define SPACES " \t"
-#define INSTRUCTION_DELIMETERS "{};"
-#define BRACES "{}"
-#define OPEN_BRACE "{"
-#define CLOSE_BRACE "}"
-#define COMMENT "//"
-#define CLOSE_P ")"
-#define CITATION_MARK "\""
-#define APOSTOPHE "'"
-#define SEMICOLON ";"
-#define FOR "for"
-#define CODE_DELIMETERS " (){}:<>*&|^/[];!?"
 #define SHM_KEY 0xD65477
 #define RMA_M 100
 
@@ -57,18 +45,11 @@ private:
         int rMNumber;
         recivedMessage rMArray[RMA_M];
 
-        inline shmStruct():rMNumber(0), rMArray{}{}
+        inline shmStruct():rMNumber(0), rMArray(){}
     };
 
-    //Fields
-private:
-    int pCounter;
-    File file;
-    argStruct argS;
-    map<string, int> rWStructure;
-    //Structure to store the multiple message from the sons is missing
-
     //Const fields
+private:
     const string help = "Usage: ./just [options] file\n"
                         "Options:\n"
                         "-i <input file>                Indicates the input file path.\n"
@@ -81,17 +62,40 @@ private:
                         "$ ./just <inputFilePath 1> <inputFilePath 2> ... <inputFilePath N>\n"
                         "Or they can be pass as a combination of both formats.";
     const string error = "Error: Invalid arguments";
+    const string spaces = " \t";
+    const string instructionDelimeters = "{};";
+    const string braces = "{}";
+    const string openBrace = "{";
+    const string closeBrace = "}";
+    const string comment = "//";
+    const string closeP = ")";
+    const string citationMark = "\"";
+    const string apostrophe = "'";
+    const string semicolon = ";";
+    const string forS = "for";
+    const string codeDelimeters = " (){}:<>*&|^/[];!?";
+
+    //Fields
+private:
+    int pCounter;
+    File file;
+    argStruct argS;
+    map<string, int> rWStructure;
 
     //Methods
 public:
     Just();
     ~Just();
+    //Indent multiple files passed by arguments (argc, argv) and print the sum of the reserved word data of each file.
     void justify(int argc, char* argv[]);
     //Separate the line string into tokens.
     static queue<string> tokenize(const string &str, const char* delimeters);
 private:
+    //Generate an output filename based on the input filename or path (iFName)
     string getOutputFileName(const string& iFName);
+    //Indent the code of the file with path iFName.
     void indent(const string& iFName, const string &oFName, Message &m ,int sonID);
+    //Separate line into sigle code instructions.
     list<string> splitInstructions(string &line);
     //Indent an instruction.
     void indentInstruction(list<string> *justList, string instruction);
@@ -111,9 +115,14 @@ private:
     void replaceBetweenChar(string& str, const string& c);
     //"Initialize" argS based on the arguments past by the user.
     void initializeArguments(int argc, char *argv[]);
+    //Print a help message for the user.
     void printHelp();
+    //Print an error message for the user.
     void printError();
+    //Send the data of each reserved word (word and counter) on rWStructure to m.
     void sendReservedWordData(Message &m, int mtype);
+    //Return the number of diferent fist letters of the reserved words.
+    int countReservedWordsFistLetters();
 };
 
 #endif // JUST_H

@@ -15,7 +15,6 @@ Message::~Message()
         perror("Message::~Message");
         _exit(-1);
     }
-    cout << "Message: ¡Me muero!" << '\n';
 }
 
 int Message::send(long msgtype, const char* m, int c)

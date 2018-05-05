@@ -6,7 +6,6 @@ Sem::Sem(int initVal){
         perror("Sem::Sem");
         _exit(-1);
     }
-    cout << "Sem ID: " << id << endl;
     semun u;
     u.val = initVal;
     if(-1 == semctl(id, 0, SETVAL, u)){
@@ -20,8 +19,8 @@ Sem::~Sem(){
         perror("Sem::~Sem");
         _exit(-1);
     }
-    cout << "Sem: ¡Me muero!" << '\n';
 }
+
 int Sem::signal(){
     sembuf s;
     s.sem_num = 0;
@@ -30,6 +29,7 @@ int Sem::signal(){
 
     return semop(id, &s, 1);
 }
+
 int Sem::wait(){
     sembuf s;
     s.sem_num = 0;

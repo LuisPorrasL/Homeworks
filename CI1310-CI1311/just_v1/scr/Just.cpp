@@ -28,6 +28,7 @@ void Just::justify(int argc, char* argv[])
         //I need to create a "Buzon" to comunicate with my sons.
         Message m;
         int sonID = 1;
+        int sonN = argS.inputFileNames.size();
         for(list<string>::iterator ind = argS.inputFileNames.begin(); ind != argS.inputFileNames.end(); ++ind){
             if(!fork()){
                 indent(*ind, getOutputFileName(*ind), m, sonID);
@@ -35,9 +36,9 @@ void Just::justify(int argc, char* argv[])
             }
             ++sonID;
         }
+
         //I need to store the number of sons I have created.
         //I need to recive the messages from my sons and store them in shared memory.
-        int sonN = --sonID;
         Sem s;
 
         int shmID = shmget(SHM_KEY, sizeof(shmStruct), IPC_CREAT | 0600);
@@ -47,36 +48,25 @@ void Just::justify(int argc, char* argv[])
         }
         shmStruct* shmArea = (shmStruct*)shmat(shmID, NULL, 0);
 
-        /*//I need to create a son to read from shmArea and print on the stdout
+        //I need to create a son to read from shmArea and print on the stdout
+        int rWFirstLetterCounter = countReservedWordsFistLetters();
         if(!fork()){
-            s.wait();
-            for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
-                cout << shmArea->rMArray[shmInd].word << " " << shmArea->rMArray[shmInd].counter << '\n';
+            for(int ind = 0; ind < rWFirstLetterCounter; ++ind){
+                s.wait();
+                cout << '\n';
+                for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
+                    char rWData[M] = {0};
+                    sprintf(rWData, "%-16s :%4d", shmArea->rMArray[shmInd].word, shmArea->rMArray[shmInd].counter);
+                    cout << rWData << '\n';
+                }
+                s.signal();
             }
-            s.signal();
-            _exit(0);
-        }
-
-        recivedMessage rM;
-
-        for(sonID = 1; sonID <= sonN; ++sonID){
-            m.receive(rM.word, M, &rM.counter, sonID);
-            shmArea->rMArray[sonID-1] = rM;
-        }
-        shmArea->rMNumber = --sonID;
-        s.signal();
-        s.wait();*/
-
-        if(!fork()){
-            s.wait();
-            for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
-                cout << shmArea->rMArray[shmInd].word << " " << shmArea->rMArray[shmInd].counter << '\n';
-            }
-            s.signal();
             _exit(0);
         }
 
         int rWN = rWStructure.size();
+        int rMCounter = 0;
+        char rWFirstLetter = 'a';
         for(int rWInd = 0; rWInd < rWN; ++rWInd){
             recivedMessage rM, shmM;
             for(sonID = 1; sonID <= sonN; ++sonID){
@@ -86,15 +76,27 @@ void Just::justify(int argc, char* argv[])
                 }
                 shmM.counter += rM.counter;
             }
-            shmArea->rMArray[rWInd] = shmM;
+            if(shmM.word[0] == rWFirstLetter){
+                shmArea->rMArray[rMCounter] = shmM;
+            }
+            else{
+                shmArea->rMNumber = rMCounter;
+                s.signal();
+                s.wait();
+                rMCounter = 0;
+                shmArea->rMArray[rMCounter] = shmM;
+                while(rWFirstLetter != shmM.word[0]){
+                    rWFirstLetter++;
+                }
+            }
+            rMCounter++;
         }
-        shmArea->rMNumber = rWN;
+        shmArea->rMNumber = rMCounter;
         s.signal();
         s.wait();
 
         shmdt(shmArea);
         shmctl(shmID, IPC_RMID, NULL);
-        cout << "Padre: ¡Me muero!" << '\n';
     }
     else{
         printError();
@@ -112,6 +114,18 @@ string Just::getOutputFileName(const string& iFName){
     outFileName.append(".sgr");
 
     return outFileName;
+}
+
+int Just::countReservedWordsFistLetters(){
+    int firstLettersCounter = 0;
+    char firstLetter = ' ';
+    for(map<string, int>::iterator it = rWStructure.begin(); it != rWStructure.end(); ++it){
+        if(it->first[0] != firstLetter){
+            firstLetter = it->first[0];
+            firstLettersCounter++;
+        }
+    }
+    return firstLettersCounter;
 }
 
 queue<string> Just::tokenize(const string &str, const char* delimeters)
@@ -157,7 +171,7 @@ list<string> Just::splitInstructions(string& line)
 {
     list<string>instructionList;
     size_t actualP = 0;
-    size_t instP = findFirstValidOf(line,INSTRUCTION_DELIMETERS, actualP);
+    size_t instP = findFirstValidOf(line,instructionDelimeters, actualP);
     string instruction;
 
     while(instP != string::npos){
@@ -166,14 +180,14 @@ list<string> Just::splitInstructions(string& line)
 
         //Special cases
         //for loop
-        if(findValid(instruction, FOR) != string::npos){
+        if(findValid(instruction, forS) != string::npos){
             if(instruction.back() == ';'){
-                size_t pPos = findFirstValidOf(line, SEMICOLON, instP + 1);
+                size_t pPos = findFirstValidOf(line, semicolon, instP + 1);
                 if(pPos != string::npos){
                     actualP = instP + 1;
                     instP = pPos;
                     instruction.append(line.substr(actualP, instP-actualP+1));
-                    pPos = findFirstValidOf(line, CLOSE_P, instP + 1);
+                    pPos = findFirstValidOf(line, closeP, instP + 1);
                     if(pPos != string::npos){
                         actualP = instP + 1;
                         instP = pPos;
@@ -184,7 +198,7 @@ list<string> Just::splitInstructions(string& line)
         }
         //};
         if(instruction.back() == '}'){
-            size_t sCP = line.find_first_not_of(SPACES, instP+1);
+            size_t sCP = line.find_first_not_of(spaces, instP+1);
             if(sCP != string::npos && line[sCP] == ';'){
                 actualP = instP + 1;
                 instP = sCP;
@@ -193,12 +207,12 @@ list<string> Just::splitInstructions(string& line)
         }
 
         actualP = instP+1;
-        instP = findFirstValidOf(line, INSTRUCTION_DELIMETERS, actualP);
+        instP = findFirstValidOf(line, instructionDelimeters, actualP);
 
         if(instP == string::npos && actualP < line.size()){
             string instComment = line.substr(actualP);
-            if(instComment.find_first_not_of(SPACES) != string::npos){
-                if(instComment.find(COMMENT) != string::npos){             //If there if a comment at the end of the instruction
+            if(instComment.find_first_not_of(spaces) != string::npos){
+                if(instComment.find(comment) != string::npos){             //If there if a comment at the end of the instruction
                     instruction.append(instComment);
                 }
                 else{                                                   //If there is another instruction
@@ -209,11 +223,11 @@ list<string> Just::splitInstructions(string& line)
         }
 
         //Separete {} parenthesis from each instruction if needed
-        size_t pPos = findFirstValidOf(instruction, BRACES);
+        size_t pPos = findFirstValidOf(instruction, braces);
         if(pPos != string::npos){
             string subInstruction = instruction.substr(pPos);
             instruction.erase(pPos);
-            if(instruction.find_first_not_of(SPACES) != string::npos){
+            if(instruction.find_first_not_of(spaces) != string::npos){
                 instructionList.push_back(instruction);
             }
             instructionList.push_back(subInstruction);
@@ -234,7 +248,7 @@ void Just::indentInstruction(list<string>* justList, string instruction)
 {
     deleteSpaces(instruction);
 
-    if(findFirstValidOf(instruction, CLOSE_BRACE) != string::npos){
+    if(findFirstValidOf(instruction, closeBrace) != string::npos){
         if(pCounter > 0){
             --pCounter;
         }
@@ -242,14 +256,14 @@ void Just::indentInstruction(list<string>* justList, string instruction)
     addSpaces(instruction, argS.e*pCounter);
     justList->push_back(instruction);
 
-    if(findFirstValidOf(instruction, OPEN_BRACE) != string::npos){
+    if(findFirstValidOf(instruction, openBrace) != string::npos){
         ++pCounter;
     }
 }
 
 void Just::deleteSpaces(string& str)
 {
-    size_t found = str.find_first_not_of(SPACES);
+    size_t found = str.find_first_not_of(spaces);
     if(found!=string::npos){
         str = str.substr(found);
     }
@@ -269,11 +283,11 @@ void Just::countReservedWords(const string& instruction)
         string cInstruction = instruction;
         //First I need to make sure I don't count reserved word in comments or between " or '.
         replaceComments(cInstruction);
-        replaceBetweenChar(cInstruction, CITATION_MARK);
-        replaceBetweenChar(cInstruction, APOSTOPHE);
+        replaceBetweenChar(cInstruction, citationMark);
+        replaceBetweenChar(cInstruction, apostrophe);
 
         //Now I need to separete str into token
-        queue<string> iTokens = tokenize(cInstruction, CODE_DELIMETERS);
+        queue<string> iTokens = tokenize(cInstruction, codeDelimeters.c_str());
 
         //Finaly I need to check if a tokens is a reserved word, and if it is, update it's counter.
         map<string, int>::iterator found;
@@ -291,8 +305,8 @@ size_t Just::findFirstValidOf(const string& line, const string& str, size_t pos)
 {
     string cLine = line;
     replaceComments(cLine);
-    replaceBetweenChar(cLine, CITATION_MARK);
-    replaceBetweenChar(cLine, APOSTOPHE);
+    replaceBetweenChar(cLine, citationMark);
+    replaceBetweenChar(cLine, apostrophe);
 
     size_t strPos = cLine.find_first_of(str, pos);
     return strPos;
@@ -302,8 +316,8 @@ size_t Just::findValid(const string& line, const string& str, size_t pos)
 {
     string cLine = line;
     replaceComments(cLine);
-    replaceBetweenChar(cLine, CITATION_MARK);
-    replaceBetweenChar(cLine, APOSTOPHE);
+    replaceBetweenChar(cLine, citationMark);
+    replaceBetweenChar(cLine, apostrophe);
 
     size_t strPos = cLine.find(str, pos);
     return strPos;
@@ -311,7 +325,7 @@ size_t Just::findValid(const string& line, const string& str, size_t pos)
 
 void Just::replaceComments(string& str)
 {
-    size_t pPos = str.find(COMMENT);
+    size_t pPos = str.find(comment);
     if(pPos != string::npos){
         str.replace(pPos, str.size()-pPos, str.size()-pPos, NULL_C);
     }
@@ -379,7 +393,6 @@ void Just::printError()
 }
 
 void Just::sendReservedWordData(Message& m, int mtype){
-    /*m.send(mtype, "Hello wold!", mtype);*/
     for(map<string, int>::iterator it = rWStructure.begin(); it != rWStructure.end(); ++it){
         m.send(mtype, it->first.c_str(), it->second);
     }
