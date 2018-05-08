@@ -56,7 +56,7 @@ void Just::justify(int argc, char* argv[])
                 sHijo.wait();
                 cout << '\n';
                 for(int shmInd = 0; shmInd < shmArea->rMNumber; ++shmInd){
-                    char rWData[M] = {0};
+                    char rWData[M*2] = {0};
                     sprintf(rWData, "%-16s :%4d", shmArea->rMArray[shmInd].word, shmArea->rMArray[shmInd].counter);
                     cout << rWData << '\n';
                 }
