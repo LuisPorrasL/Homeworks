@@ -213,10 +213,10 @@ list<string> Just::splitInstructions(string& line)
         if(instP == string::npos && actualP < line.size()){
             string instComment = line.substr(actualP);
             if(instComment.find_first_not_of(spaces) != string::npos){
-                if(instComment.find(comment) != string::npos){             //If there if a comment at the end of the instruction
+                if(instComment.find(comment) != string::npos){              //If there if a comment at the end of the instruction
                     instruction.append(instComment);
                 }
-                else{                                                   //If there is another instruction
+                else{                                                       //If there is another instruction
                     line = instComment;
                     actualP = 0;
                 }

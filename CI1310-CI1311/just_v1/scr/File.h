@@ -15,9 +15,9 @@ class File
 {
 public:
     File();
-    //Open the file with name fName and read it, if fName is std::cin it while read from the standar input
+    //Open the file with name fName and read it, if fName is "std::cin" it will read from the standar input.
     list<string> read(string fName);
-    //Open or creates a file with name fName and read it, if fName is std::cout it while write in the standar output.
+    //Open or creates a file with name fName and write on it, if fName is "std::cout" it will write on the standar output.
     void write(const list<string> &fList, string fName);
 };
 
